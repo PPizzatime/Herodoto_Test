@@ -1,0 +1,14 @@
+-- Supabase Seed File
+
+-- 1. Seed Organizations
+INSERT INTO public.organizations (id, name, type) 
+VALUES ('11111111-1111-1111-1111-111111111111', 'Herodoto HQ', 'INTERNAL')
+ON CONFLICT (id) DO NOTHING;
+
+-- 2. Seed basic Roles
+INSERT INTO public.roles (id, name)
+VALUES 
+  ('22222222-2222-2222-2222-222222222221', 'MEMBER'),
+  ('22222222-2222-2222-2222-222222222222', 'MANAGER'),
+  ('22222222-2222-2222-2222-222222222223', 'ADMIN')
+ON CONFLICT (id) DO NOTHING;

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Herodoto - Project Documentation</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 900px; margin: 0 auto; padding: 2rem; }
+        h1 { border-bottom: 2px solid #000; padding-bottom: 0.5rem; }
+        h2 { color: #2563eb; margin-top: 2rem; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.25rem; }
+        .status { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 600; margin-left: 0.5rem; }
+        .status.done { background-color: #dcfce7; color: #166534; }
+        .status.progress { background-color: #fef08a; color: #854d0e; }
+        .status.todo { background-color: #f3f4f6; color: #374151; }
+        .card { border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        code { background-color: #f3f4f6; padding: 0.2rem 0.4rem; border-radius: 0.25rem; font-size: 0.875em; }
+        pre { background-color: #f3f4f6; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Herodoto Project Documentation</h1>
+    <p>Last Updated: September 2026</p>
+
+    <h2>1. Executive Summary</h2>
+    <p>Herodoto is an AI-guided cultural travel platform. It offers a mobile app for consumers to experience interactive, audio-guided tours based on their geographic location, and a web portal for internal operations (admin/managers).</p>
+
+    <h2>2. Current Architecture</h2>
+    <div class="card">
+        <h3>Frontend (Mobile) <span class="status done">Implemented</span></h3>
+        <ul>
+            <li><strong>Framework:</strong> React Native with Expo (runs on iOS, Android, and Web).</li>
+            <li><strong>Features:</strong> Location-based tour sorting, interactive maps, text-to-speech (TTS) audio playback, offline-ready UI components.</li>
+            <li><strong>Login:</strong> Autofill development buttons for fast testing, secured behind Supabase Auth.</li>
+        </ul>
+    </div>
+    
+    <div class="card">
+        <h3>Frontend (Web Office) <span class="status done">Implemented</span></h3>
+        <ul>
+            <li><strong>Framework:</strong> Next.js (React)</li>
+            <li><strong>Features:</strong> Admin dashboard, organization chart manipulation (restricted by RBAC), content management workflows.</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h3>Backend <span class="status done">Implemented</span></h3>
+        <ul>
+            <li><strong>Platform:</strong> Supabase (PostgreSQL, GoTrue Auth, Edge Functions)</li>
+            <li><strong>Security:</strong> Row Level Security (RLS) policies enforcing multi-tenant isolation.</li>
+            <li><strong>Automation:</strong> Postgres Triggers automatically assign correct RBAC roles (Admin, Manager, Employee) when a user creates an account with specific email domains (<code>@herodoto.art</code>).</li>
+        </ul>
+    </div>
+
+    <h2>3. Requirements & Status Tracker</h2>
+    <table>
+        <tr>
+            <th style="text-align: left; padding: 8px;">Requirement</th>
+            <th style="text-align: left; padding: 8px;">Status</th>
+        </tr>
+        <tr>
+            <td style="padding: 8px;">User Roles & Permissions (RBAC)</td>
+            <td style="padding: 8px;"><span class="status done">Done</span></td>
+        </tr>
+        <tr>
+            <td style="padding: 8px;">Mobile: Location-Aware Tour Sorting</td>
+            <td style="padding: 8px;"><span class="status done">Done</span></td>
+        </tr>
+        <tr>
+            <td style="padding: 8px;">Mobile: TTS Audio Guide Player</td>
+            <td style="padding: 8px;"><span class="status done">Done</span></td>
+        </tr>
+        <tr>
+            <td style="padding: 8px;">Mobile: Dynamic Tour Cards with Images</td>
+            <td style="padding: 8px;"><span class="status done">Done</span></td>
+        </tr>
+        <tr>
+            <td style="padding: 8px;">Web: Organization Chart UI</td>
+            <td style="padding: 8px;"><span class="status done">Done</span></td>
+        </tr>
+        <tr>
+            <td style="padding: 8px;">Security: Supabase Row Level Security</td>
+            <td style="padding: 8px;"><span class="status progress">In Progress</span></td>
+        </tr>
+        <tr>
+            <td style="padding: 8px;">Deployment: Free Hosting (Vercel)</td>
+            <td style="padding: 8px;"><span class="status todo">To Do</span></td>
+        </tr>
+    </table>
+
+    <h2>4. Next Steps (Ideal State)</h2>
+    <div class="card">
+        <ol>
+            <li><strong>Connect Real Data:</strong> Replace <code>lib/data.ts</code> mock data with live Supabase database fetching using <code>@supabase/supabase-js</code>.</li>
+            <li><strong>Deploy Web App:</strong> Push the <code>apps/web</code> folder to Vercel for free hosting attached to the <code>herodoto.art</code> domain.</li>
+            <li><strong>Publish Expo App:</strong> Build the APK/IPA files via EAS (Expo Application Services) so teammates can install the native app on their phones without using the web version.</li>
+            <li><strong>Finalize RLS Policies:</strong> Ensure the database restricts data access exclusively to authenticated users.</li>
+        </ol>
+    </div>
+</body>
+</html>
