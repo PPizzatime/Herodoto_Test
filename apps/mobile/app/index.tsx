@@ -43,9 +43,9 @@ export default function IndexScreen() {
       if (role === 'consumer') {
         router.replace('/(consumer)/guides');
       } else {
-        const workerUrl = Platform.OS === 'web' 
-          ? 'http://localhost:3000/office?role=' + role 
-          : 'http://192.168.1.112:3000/office?role=' + role;
+        const workerUrl = __DEV__ 
+          ? (Platform.OS === 'web' ? 'http://localhost:3000/office?role=' + role : 'http://192.168.1.112:3000/office?role=' + role)
+          : 'https://herodototest.netlify.app/office/dashboard?role=' + role;
         
         if (Platform.OS === 'web') {
           window.location.href = workerUrl;
@@ -268,6 +268,7 @@ const styles = StyleSheet.create({
     color: 'black',
   }
 });
+
 
 
 
