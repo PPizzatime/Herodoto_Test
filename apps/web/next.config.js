@@ -5,7 +5,7 @@ const nextConfig = {
       fallback: [
         {
           source: '/:path*',
-          destination: '/index.html',
+          destination: '/mobile.html',
         },
       ],
     }

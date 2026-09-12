@@ -5,7 +5,7 @@
     "private":  true,
     "scripts":  {
                     "dev":  "next dev --port 3000",
-                    "build":  "cd ../mobile \u0026\u0026 npx expo export -p web \u0026\u0026 cd ../web \u0026\u0026 mkdir -p public \u0026\u0026 cp -r ../mobile/dist/* public/ \u0026\u0026 next build",
+                    "build":  "cd ../mobile \u0026\u0026 npx expo export -p web \u0026\u0026 cd ../web \u0026\u0026 mkdir -p public \u0026\u0026 cp -r ../mobile/dist/* public/ \u0026\u0026 mv public/index.html public/mobile.html \u0026\u0026 next build",
                     "start":  "next start",
                     "lint":  "eslint --max-warnings 0",
                     "check-types":  "next typegen \u0026\u0026 tsc --noEmit"

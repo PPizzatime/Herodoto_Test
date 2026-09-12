@@ -8,7 +8,7 @@ export default function Home() {
         <p style={{ color: '#6b7280', marginBottom: '32px' }}>Select your environment to continue.</p>
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <Link href="/index.html" style={{ padding: '16px', backgroundColor: '#3b82f6', color: 'white', borderRadius: '8px', fontWeight: 'bold', textDecoration: 'none', transition: '0.2s' }}>
+          <Link href="/guides" style={{ padding: '16px', backgroundColor: '#3b82f6', color: 'white', borderRadius: '8px', fontWeight: 'bold', textDecoration: 'none', transition: '0.2s' }}>
             ?? Enter Consumer App
           </Link>
           
@@ -20,3 +20,4 @@ export default function Home() {
     </div>
   );
 }
+
