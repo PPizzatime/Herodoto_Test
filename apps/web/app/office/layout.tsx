@@ -36,7 +36,7 @@ export default function OfficeLayout({ children }: { children: React.ReactNode }
           
           {/* Logout Button */}
           <Link 
-            href="/login" 
+            href="/" 
             style={{ 
               marginTop: 'auto', 
               padding: '12px', 
@@ -78,4 +78,5 @@ export default function OfficeLayout({ children }: { children: React.ReactNode }
     </div>
   );
 }
+
 

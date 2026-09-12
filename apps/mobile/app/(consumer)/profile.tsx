@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Button, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Button, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 
@@ -18,7 +18,6 @@ export default function ProfileScreen() {
       if (user?.email) {
         setEmail(user.email);
       } else {
-        // Fallback for when the DB is offline and we bypassed auth
         setEmail('consumer@test.com (Bypassed)');
       }
       setLoading(false);
@@ -30,6 +29,21 @@ export default function ProfileScreen() {
     await supabase.auth.signOut();
     router.replace('/');
   };
+
+  const handleEnterOffice = () => {
+    const role = email.split('@')[0];
+    const workerUrl = __DEV__ 
+      ? 'http://localhost:3000/office/dashboard?role=' + role
+      : '/office/dashboard?role=' + role;
+    
+    if (Platform.OS === 'web') {
+      window.location.href = workerUrl;
+    } else {
+      alert(Please open the web portal on your desktop to access the Office!);
+    }
+  };
+
+  const isWorker = email.startsWith('admin') || email.startsWith('employee') || email.startsWith('manager');
 
   if (loading) {
     return (
@@ -46,22 +60,25 @@ export default function ProfileScreen() {
         <Text style={styles.email}>{email}</Text>
       </View>
 
+      {isWorker && (
+        <View style={[styles.card, { backgroundColor: '#111827' }]}>
+          <Text style={[styles.sectionTitle, { color: 'white' }]}>Employee Portal</Text>
+          <Text style={[styles.stat, { color: '#9ca3af', marginBottom: 16 }]}>Access CMS, tasks, and organization tools.</Text>
+          <TouchableOpacity style={styles.officeButton} onPress={handleEnterOffice}>
+            <Text style={styles.officeButtonText}>Enter Office Dashboard ??</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Gamification</Text>
         <Text style={styles.stat}>Level {level}</Text>
         <Text style={styles.stat}>{points} / {pointsForNextLevel} Points</Text>
         <View style={styles.progressBar}>
-           {/* Fallback to simple view width for cross-platform progress bar */}
            <View style={{ width: '100%', height: 10, backgroundColor: '#eee', borderRadius: 5 }}>
-             <View style={{ width: `${progress * 100}%`, height: 10, backgroundColor: 'tomato', borderRadius: 5 }} />
+             <View style={{ width: ${progress * 100}%, height: 10, backgroundColor: 'tomato', borderRadius: 5 }} />
            </View>
         </View>
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Subscription</Text>
-        <Text style={styles.stat}>Status: FREE</Text>
-        <Button title="Upgrade Plan" onPress={() => alert('Upgrade flow')} />
       </View>
 
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
@@ -86,6 +103,17 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 12 },
   stat: { fontSize: 16, marginBottom: 8 },
   progressBar: { marginTop: 8 },
+  officeButton: {
+    backgroundColor: 'white',
+    padding: 12,
+    borderRadius: 6,
+    alignItems: 'center'
+  },
+  officeButtonText: {
+    color: 'black',
+    fontWeight: 'bold',
+    fontSize: 16
+  },
   logoutButton: {
     backgroundColor: '#ef4444',
     padding: 16,
@@ -100,4 +128,3 @@ const styles = StyleSheet.create({
     fontWeight: 'bold'
   }
 });
-

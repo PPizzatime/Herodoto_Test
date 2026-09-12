@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Platform, ActivityIndicator, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ActivityIndicator, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import { User, Briefcase, Shield, Settings } from 'lucide-react-native';
 import { supabase } from '../lib/supabase';
@@ -38,36 +38,22 @@ export default function IndexScreen() {
 
       if (error) throw error;
       
-      const role = email.split('@')[0];
+      // All users (Consumers and Employees) go to the Consumer app first!
+      router.replace('/(consumer)/guides');
       
-      if (role === 'consumer') {
-        router.replace('/(consumer)/guides');
-      } else {
-        const workerUrl = __DEV__ 
-          ? (Platform.OS === 'web' ? 'http://localhost:3000/office?role=' + role : 'http://192.168.1.112:3000/office?role=' + role)
-          : 'https://herodototest.netlify.app/office/dashboard?role=' + role;
-        
-        if (Platform.OS === 'web') {
-          window.location.href = workerUrl;
-        } else {
-          alert(`Worker logged in! Please open ${workerUrl} on your desktop.`);
-          setLoading(false);
-        }
-      }
     } catch (err: any) {
       if (err.message === 'Failed to fetch' || err.message.includes('Network request failed')) {
-        setErrorMsg('Database is offline. Run `supabase start` or check your .env variables.');
-        setLoading(false);
+        setErrorMsg('Database is offline. Check your connection.');
       } else {
         setErrorMsg(err.message || 'Login failed.');
-        setLoading(false);
       }
+      setLoading(false);
     }
   };
 
   const autofill = (r: string, e: string) => {
     setEmail(e);
-    setPassword('password123'); // From seed.sql
+    setPassword('password123');
   };
 
   if (loading) {
@@ -268,8 +254,3 @@ const styles = StyleSheet.create({
     color: 'black',
   }
 });
-
-
-
-
-
