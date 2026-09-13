@@ -76,7 +76,7 @@ export default function ProfileScreen() {
         <Text style={styles.stat}>{points} / {pointsForNextLevel} Points</Text>
         <View style={styles.progressBar}>
            <View style={{ width: '100%', height: 10, backgroundColor: '#eee', borderRadius: 5 }}>
-             <View style={{ width: ${progress * 100}%, height: 10, backgroundColor: 'tomato', borderRadius: 5 }} />
+             <View style={{ width: `${progress * 100}%`, height: 10, backgroundColor: 'tomato', borderRadius: 5 }} />
            </View>
         </View>
       </View>
@@ -128,4 +128,5 @@ const styles = StyleSheet.create({
     fontWeight: 'bold'
   }
 });
+
 
