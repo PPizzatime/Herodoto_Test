@@ -39,7 +39,7 @@ export default function ProfileScreen() {
     if (Platform.OS === 'web') {
       window.location.href = workerUrl;
     } else {
-      alert(Please open the web portal on your desktop to access the Office!);
+      alert('Please open the web portal on your desktop to access the Office!');
     }
   };
 
@@ -128,3 +128,4 @@ const styles = StyleSheet.create({
     fontWeight: 'bold'
   }
 });
+
