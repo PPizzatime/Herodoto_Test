@@ -49,7 +49,7 @@ export default function Comments({ pageId }: { pageId: string }) {
     const match = val.match(/@(\w*)$/);
     if (match) {
       setShowMentions(true);
-      setMentionQuery(match[1].toLowerCase());
+      setMentionQuery((match[1] || '').toLowerCase());
     } else {
       setShowMentions(false);
     }
@@ -147,3 +147,4 @@ export default function Comments({ pageId }: { pageId: string }) {
     </div>
   );
 }
+
