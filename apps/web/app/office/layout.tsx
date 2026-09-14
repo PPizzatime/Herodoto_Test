@@ -32,6 +32,7 @@ export default function OfficeLayout({ children }: { children: React.ReactNode }
             <Link href="/office/subscriptions" style={{ color: 'white', textDecoration: 'none' }}>Subscriptions</Link>
             <Link href="/office/promo-codes" style={{ color: 'white', textDecoration: 'none' }}>Promo Codes</Link>
             <Link href="/office/security" style={{ color: '#ff6b6b', textDecoration: 'none' }}>Security & Audit</Link>
+            <Link href="/office/docs" style={{ color: '#60a5fa', textDecoration: 'none' }}>System Docs</Link>
           </nav>
           
           {/* Logout Button */}
@@ -78,5 +79,6 @@ export default function OfficeLayout({ children }: { children: React.ReactNode }
     </div>
   );
 }
+
 
 
