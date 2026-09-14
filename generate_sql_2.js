@@ -1,6 +1,7 @@
 const fs = require('fs');
 
 function tsxToMarkdown(tsx) {
+  if (!tsx.includes('return (')) return '';
   let md = tsx.split('return (')[1];
   md = md.substring(md.indexOf('<h1'));
   md = md.split('<Comments')[0];
@@ -23,10 +24,10 @@ function tsxToMarkdown(tsx) {
   return md;
 }
 
-const architectureMd = tsxToMarkdown(fs.readFileSync('architecture_temp.txt', 'utf8'));
-const techStackMd = tsxToMarkdown(fs.readFileSync('techstack_temp.txt', 'utf8'));
+const architectureMd = tsxToMarkdown(fs.readFileSync('architecture_temp.txt', 'utf16le'));
+const techStackMd = tsxToMarkdown(fs.readFileSync('techstack_temp.txt', 'utf16le'));
 
-const deployMatch = fs.readFileSync('deployment_temp.txt', 'utf8').match(/Buffer\.from\("([^"]+)"/);
+const deployMatch = fs.readFileSync('deployment_temp.txt', 'utf16le').match(/Buffer\.from\("([^"]+)"/);
 const deploymentMd = deployMatch ? Buffer.from(deployMatch[1], 'base64').toString('utf-8') : '';
 
 // Let's create an SQL file!
