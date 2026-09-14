@@ -2,15 +2,13 @@ import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import Comments from '../Comments';
 import { createServerClient } from '@repo/supabase';
-import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 
 export default async function DynamicDocPage({ params }: { params: { slug: string } }) {
-  const cookieStore = cookies();
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:54321';
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:54321';
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'dummy';
   
-  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, cookieStore);
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey);
   
   const { data: page } = await supabase
     .from('documentation_pages')
@@ -47,3 +45,4 @@ export default async function DynamicDocPage({ params }: { params: { slug: strin
     </div>
   );
 }
+
