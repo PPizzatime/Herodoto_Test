@@ -16,7 +16,7 @@ export default function GuidesCMSPage() {
   const fetchGuides = async () => {
     const { data, error } = await supabase
       .from('guides')
-      .select('*, guide_versions(*), guide_images(*)');
+      .select('*, guide_versions!guide_versions_guide_id_fkey(*), guide_images(*)');
       
     if (data) {
       setGuides(data);

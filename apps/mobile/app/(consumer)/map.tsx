@@ -59,7 +59,9 @@ export default function MapScreen() {
       <body>
         <div id="map"></div>
         <script>
-          var map = L.map("map").setView([19.4326, -99.1332], 4);
+          var userLat = ${userLocation ? userLocation.lat : 19.4326};
+          var userLng = ${userLocation ? userLocation.lng : -99.1332};
+          var map = L.map("map").setView([userLat, userLng], ${userLocation ? 10 : 4});
           L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
             attribution: "OpenStreetMap"
           }).addTo(map);
@@ -89,8 +91,9 @@ export default function MapScreen() {
       <View style={styles.container}>
         <Mapbox.MapView style={styles.map}>
           <Mapbox.Camera
-            zoomLevel={4}
-            centerCoordinate={[-99.1332, 19.4326]}
+            zoomLevel={userLocation ? 10 : 4}
+            centerCoordinate={userLocation ? [userLocation.lng, userLocation.lat] : [-99.1332, 19.4326]}
+            animationDuration={2000}
           />
           {guides.filter(g => g.lat && g.lng).map((guide) => (
             <Mapbox.PointAnnotation

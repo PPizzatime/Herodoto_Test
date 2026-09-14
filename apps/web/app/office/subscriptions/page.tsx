@@ -58,8 +58,9 @@ export default function SubscriptionsPage() {
   };
 
   const fetchGuides = async () => {
-    const { data } = await supabase.from('guides').select('id, title').order('title');
-    if (data) setGuides(data);
+    const { data } = await supabase.from('guide_versions').select('guide_id, title').order('title');
+    const mappedData = data?.map(d => ({ id: d.guide_id, title: d.title })) || [];
+    if (mappedData) setGuides(mappedData);
   };
 
   const handleAddPlan = async (e: React.FormEvent) => {

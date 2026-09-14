@@ -48,10 +48,14 @@ export default function GuidesListScreen() {
       let isActive = true;
 
       const fetchGuidesData = async () => {
-        // Fetch guide versions and promos
-        const { data: gVersions } = await supabase.from('guide_versions').select('*');
+        // Fetch published guides, their active version, and images
+        const { data: gList } = await supabase
+          .from('guides')
+          .select('*, guide_versions!guides_active_version_id_fkey(*), guide_images(*)')
+          .eq('status', 'PUBLISHED')
+          .is('deleted_at', null);
+          
         const { data: activePromos } = await supabase.from('promos').select('guide_id').eq('status', 'ACTIVE');
-        
         const promoGuideIds = new Set(activePromos?.map(p => p.guide_id) || []);
 
         // Fetch user history
@@ -71,8 +75,9 @@ export default function GuidesListScreen() {
           }
         }
 
-        if (gVersions && isActive) {
-          const allGuides = gVersions.map((gv: any) => {
+        if (gList && isActive) {
+          const allGuides = gList.map((g: any) => {
+            const gv = g.guide_versions || {};
             let distance;
             if (location && gv.lat && gv.lng) {
               distance = getDistanceFromLatLonInKm(
@@ -82,31 +87,31 @@ export default function GuidesListScreen() {
                 gv.lng
               );
             }
+            
+            // Prefer first guide_image, otherwise fallback to version image_url
+            const firstImage = (g.guide_images && g.guide_images.length > 0) 
+                ? g.guide_images[0].image_url 
+                : (gv.image_url || 'https://via.placeholder.com/400?text=No+Image');
+
             return {
               ...gv,
-              id: gv.guide_id,
-              image: gv.image_url,
+              id: g.id,
+              image: firstImage,
               distance,
-              historyStatus: historyMap.get(gv.guide_id)
+              historyStatus: historyMap.get(g.id)
             };
           });
 
-          const dedupedMap = new Map();
-          allGuides.forEach(g => {
-            if (!dedupedMap.has(g.id)) {
-              dedupedMap.set(g.id, g);
-            }
-          });
-          const dedupedGuides = Array.from(dedupedMap.values());
-          dedupedGuides.sort((a, b) => (a.distance || 0) - (b.distance || 0));
+          // Sort by distance
+          allGuides.sort((a, b) => (a.distance || 0) - (b.distance || 0));
 
-          setSortedGuides(dedupedGuides);
+          setSortedGuides(allGuides);
           
           // OFFERS filter using promos table
-          setOfferGuides(dedupedGuides.filter(g => promoGuideIds.has(g.id)));
+          setOfferGuides(allGuides.filter((g: any) => promoGuideIds.has(g.id)));
 
           // HISTORY
-          setHistoryGuides(dedupedGuides.filter(g => g.historyStatus));
+          setHistoryGuides(allGuides.filter((g: any) => g.historyStatus));
         }
       };
 
