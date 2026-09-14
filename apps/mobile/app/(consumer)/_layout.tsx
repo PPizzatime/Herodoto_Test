@@ -1,8 +1,49 @@
 import { Tabs } from 'expo-router';
 import { Globe, Map as MapIcon, Bell, User, Smile } from 'lucide-react-native';
 import { View, Text, SafeAreaView, Platform, StatusBar } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabase';
 
 export default function ConsumerLayout() {
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        setUserId(data.user.id);
+        fetchUnreadCount(data.user.id);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!userId) return;
+
+    const channel = supabase.channel('mobile-notifications-badge')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` }, () => {
+        fetchUnreadCount(userId);
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` }, () => {
+        fetchUnreadCount(userId);
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` }, () => {
+        fetchUnreadCount(userId);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
+
+  const fetchUnreadCount = async (uid: string) => {
+    const { data } = await supabase.from('notifications').select('id').eq('user_id', uid).eq('is_read', false);
+    if (data) {
+      setUnreadCount(data.length);
+    }
+  };
+
   return (
     <Tabs screenOptions={{ 
       headerShown: true, 
@@ -34,7 +75,9 @@ export default function ConsumerLayout() {
         name="notifications" 
         options={{ 
           title: 'Notifications',
-          tabBarIcon: ({ color, size }) => <Bell color={color} size={size} />
+          tabBarIcon: ({ color, size }) => <Bell color={color} size={size} />,
+          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
+          tabBarBadgeStyle: { backgroundColor: 'red' }
         }} 
       />
       <Tabs.Screen 
@@ -47,3 +90,4 @@ export default function ConsumerLayout() {
     </Tabs>
   );
 }
+
