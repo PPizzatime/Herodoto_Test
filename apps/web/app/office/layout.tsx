@@ -1,10 +1,34 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { createBrowserClient } from '@repo/supabase';
+
+// Use same env variables as Next.js normally would
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:54321';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'dummy';
+const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey);
 
 export default function OfficeLayout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user }, error }) => {
+      if (error || !user) {
+        // Not logged in -> kick them out
+        window.location.href = '/app';
+      } else {
+        setIsAuthorized(true);
+      }
+    });
+  }, []);
+
+  if (!isAuthorized) {
+    return <div style={{ padding: '50px', textAlign: 'center', fontFamily: 'sans-serif' }}>Authenticating...</div>;
+  }
 
   return (
     <div style={{ display: 'flex', height: '100vh', fontFamily: 'sans-serif' }}>
@@ -79,6 +103,7 @@ export default function OfficeLayout({ children }: { children: React.ReactNode }
     </div>
   );
 }
+
 
 
 
