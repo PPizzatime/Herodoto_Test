@@ -6,9 +6,8 @@ import * as Location from 'expo-location';
 
 import { supabase } from '../../../lib/supabase';
 
-// Haversine formula to calculate distance between two coordinates in km
 function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const R = 6371; // Radius of the earth in km
+  const R = 6371; 
   const dLat = (lat2 - lat1) * (Math.PI / 180);
   const dLon = (lon2 - lon1) * (Math.PI / 180);
   const a = 
@@ -16,7 +15,7 @@ function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon
     Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * 
     Math.sin(dLon / 2) * Math.sin(dLon / 2); 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); 
-  return R * c; // Distance in km
+  return R * c; 
 }
 
 export default function GuidesListScreen() {
@@ -41,13 +40,23 @@ export default function GuidesListScreen() {
         }
       }
 
-      // Fetch guide versions
+      // Fetch guide versions and promos
       const { data: gVersions } = await supabase.from('guide_versions').select('*');
+      const { data: activePromos } = await supabase.from('promos').select('guide_id').eq('status', 'ACTIVE');
       
+      const promoGuideIds = new Set(activePromos?.map(p => p.guide_id) || []);
+
       // Fetch user history
       const { data: { user } } = await supabase.auth.getUser();
       let historyMap = new Map();
       if (user) {
+        // Look up activity logs for history
+        const { data: historyLogs } = await supabase.from('activity_logs').select('*').eq('user_id', user.id).eq('action', 'OPEN_GUIDE');
+        if (historyLogs) {
+          historyLogs.forEach((h: any) => historyMap.set(h.record_id, 'OPENED'));
+        }
+        
+        // Also fallback to user_guide_history
         const { data: historyList } = await supabase.from('user_guide_history').select('*').eq('user_id', user.id);
         if (historyList) {
           historyList.forEach((h: any) => historyMap.set(h.guide_id, h.status));
@@ -67,14 +76,13 @@ export default function GuidesListScreen() {
           }
           return {
             ...gv,
-            id: gv.guide_id, // we map guide_id to id so router pushes properly
+            id: gv.guide_id,
             image: gv.image_url,
             distance,
             historyStatus: historyMap.get(gv.guide_id)
           };
         });
 
-        // Dedup by guide_id (take the first one or latest version, assume 1 active for now)
         const dedupedMap = new Map();
         allGuides.forEach(g => {
           if (!dedupedMap.has(g.id)) {
@@ -82,13 +90,12 @@ export default function GuidesListScreen() {
           }
         });
         const dedupedGuides = Array.from(dedupedMap.values());
-
-        // Sort by distance
         dedupedGuides.sort((a, b) => (a.distance || 0) - (b.distance || 0));
-        setSortedGuides(dedupedGuides);
 
-        // OFFERS
-        setOfferGuides(dedupedGuides.filter(g => g.price === 0 || g.discount_price !== null));
+        setSortedGuides(dedupedGuides);
+        
+        // OFFERS filter using promos table
+        setOfferGuides(dedupedGuides.filter(g => promoGuideIds.has(g.id)));
 
         // HISTORY
         setHistoryGuides(dedupedGuides.filter(g => g.historyStatus));
@@ -259,7 +266,3 @@ const styles = StyleSheet.create({
     color: '#666'
   }
 });
-
-
-
-

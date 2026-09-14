@@ -9,7 +9,7 @@ export default function GuideMarkdownEditor({ initialData = null, guideId }: { i
   const [title, setTitle] = useState(initialData?.title || '');
   const [description, setDescription] = useState(initialData?.description || '# New Guide\n\nWrite your guide content here...');
   const [price, setPrice] = useState(initialData?.price || 0);
-  const [imageUrl, setImageUrl] = useState(initialData?.image_url || '');
+  const [imageUrls, setImageUrls] = useState(initialData?.image_url || '');
   const [loading, setLoading] = useState(false);
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:54321';
@@ -23,13 +23,16 @@ export default function GuideMarkdownEditor({ initialData = null, guideId }: { i
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { alert('Not authenticated'); setLoading(false); return; }
 
+    const urls = imageUrls.split(',').map((u: string) => u.trim()).filter(Boolean);
+    const primaryImage = urls[0] || '';
+
     const payload = {
       guide_id: guideId,
       version_number: initialData?.version_number || 1,
       title,
       description,
       price: parseFloat(price.toString()),
-      image_url: imageUrl
+      image_url: primaryImage
     };
 
     let res;
@@ -41,10 +44,27 @@ export default function GuideMarkdownEditor({ initialData = null, guideId }: { i
 
     if (res.error) {
       alert('Error saving guide: ' + res.error.message);
-    } else {
-      router.push(`/office/guides`);
-      router.refresh();
+      setLoading(false);
+      return;
     }
+
+    // Save additional images to guide_images table
+    if (urls.length > 0) {
+      // First, delete existing images for this guide
+      await supabase.from('guide_images').delete().eq('guide_id', guideId);
+      
+      // Then insert the new ones
+      const imagePayloads = urls.map((url: string) => ({
+        guide_id: guideId,
+        image_url: url,
+        is_user_uploaded: false,
+        status: 'APPROVED'
+      }));
+      await supabase.from('guide_images').insert(imagePayloads);
+    }
+
+    router.push(`/office/guides`);
+    router.refresh();
     setLoading(false);
   };
 
@@ -58,9 +78,9 @@ export default function GuideMarkdownEditor({ initialData = null, guideId }: { i
           style={{ flex: 1, minWidth: '200px', padding: '12px', fontSize: '18px', fontWeight: 'bold', border: '1px solid #d1d5db', borderRadius: '6px' }}
         />
         <input 
-          placeholder="Image URL (Unsplash etc.)" 
-          value={imageUrl} 
-          onChange={e => setImageUrl(e.target.value)}
+          placeholder="Image URLs (comma separated)" 
+          value={imageUrls} 
+          onChange={e => setImageUrls(e.target.value)}
           style={{ flex: 1, minWidth: '200px', padding: '12px', border: '1px solid #d1d5db', borderRadius: '6px' }}
         />
         <input 

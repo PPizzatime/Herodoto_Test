@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Platform, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Platform, Image, Alert, FlatList } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Play, Square, MapPin, ArrowLeft, Smile } from 'lucide-react-native';
+import { Play, Square, MapPin, ArrowLeft, Smile, Camera } from 'lucide-react-native';
 import * as Speech from 'expo-speech';
 import { supabase } from '../../../lib/supabase';
 
@@ -10,9 +10,17 @@ export default function GuideScreen() {
   const router = useRouter();
   
   const [guide, setGuide] = useState<any>(null);
+  const [images, setImages] = useState<any[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
+
+  const fetchImages = async () => {
+    const { data: imgData } = await supabase.from('guide_images').select('*').eq('guide_id', id);
+    if (imgData) {
+      setImages(imgData);
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -27,9 +35,19 @@ export default function GuideScreen() {
           ]
         });
 
-        // 2. Add to user history if not exists
+        await fetchImages();
+
+        // 2. Add to user history and activity log
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
+          // Log Activity
+          await supabase.from('activity_logs').insert({
+            user_id: user.id,
+            action: 'OPEN_GUIDE',
+            details: { guide_id: id },
+            points_earned: 0
+          });
+
           const { data: existing } = await supabase.from('user_guide_history').select('*').eq('user_id', user.id).eq('guide_id', id).maybeSingle();
           if (!existing) {
             await supabase.from('user_guide_history').insert({
@@ -90,14 +108,58 @@ export default function GuideScreen() {
     setActiveSection(null);
   };
 
+  const handleUploadPhoto = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      Alert.alert('Error', 'You must be logged in to upload a photo.');
+      return;
+    }
+
+    const fakeImageUrl = 'https://images.unsplash.com/photo-1532468766723-5e913a4369e9?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80';
+
+    await supabase.from('guide_images').insert({
+      guide_id: id,
+      image_url: fakeImageUrl,
+      user_id: user.id,
+      is_user_uploaded: true,
+      status: 'APPROVED' // Auto-approve for demo
+    });
+
+    const rewardPoints = 50;
+    await supabase.from('activity_logs').insert({
+      user_id: user.id,
+      action: 'PHOTO_UPLOAD',
+      details: { guide_id: id },
+      points_earned: rewardPoints
+    });
+
+    Alert.alert('Success!', `Photo uploaded! You earned ${rewardPoints} points!`);
+    await fetchImages();
+  };
+
   if (!guide) {
     return <SafeAreaView style={styles.container}><Text>Loading...</Text></SafeAreaView>;
   }
 
+  // Use the primary image from guide_versions as fallback, but prefer guide_images
+  const displayImages = images.length > 0 ? images.map(img => img.image_url) : [guide.image_url];
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
-        <Image source={{ uri: guide.image_url }} style={styles.headerImage} />
+        {/* Horizontal Carousel of Images */}
+        <View style={styles.carouselContainer}>
+          <FlatList
+            data={displayImages}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(_, idx) => idx.toString()}
+            renderItem={({ item }) => (
+              <Image source={{ uri: item }} style={styles.headerImage} />
+            )}
+          />
+        </View>
         
         <View style={styles.headerActions}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
@@ -110,7 +172,7 @@ export default function GuideScreen() {
             <Text style={styles.title}>{guide.title}</Text>
           </View>
           
-          <View style={{flexDirection: 'row', alignItems: 'center', marginVertical: 8, gap: 12}}>
+          <View style={{flexDirection: 'row', alignItems: 'center', marginVertical: 8, gap: 12, flexWrap: 'wrap'}}>
             <View style={styles.badge}>
               <MapPin color="#666" size={14} />
               <Text style={styles.badgeText}>Start at Main Entrance</Text>
@@ -121,6 +183,12 @@ export default function GuideScreen() {
                 <Text style={[styles.badgeText, {color: '#facc15', fontWeight: 'bold'}]}>{guide.points_reward} pts</Text>
               </View>
             )}
+
+            {/* Upload Photo Gamification Button */}
+            <TouchableOpacity style={styles.uploadButton} onPress={handleUploadPhoto}>
+              <Camera color="#fff" size={14} />
+              <Text style={styles.uploadButtonText}>Add Photo (+50 pts)</Text>
+            </TouchableOpacity>
           </View>
           
           <Text style={styles.description}>{guide.description}</Text>
@@ -167,7 +235,8 @@ export default function GuideScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f5f5f5' },
-  headerImage: { width: '100%', height: 250, resizeMode: 'cover' },
+  carouselContainer: { width: '100%', height: 250 },
+  headerImage: { width: 400, height: 250, resizeMode: 'cover' }, // Hardcoded width roughly equal to device width for FlatList paging
   headerActions: { position: 'absolute', top: Platform.OS === 'ios' ? 50 : 20, left: 16 },
   backButton: { backgroundColor: 'rgba(255,255,255,0.9)', padding: 8, borderRadius: 20 },
   content: { padding: 16, marginTop: -20, backgroundColor: '#f5f5f5', borderTopLeftRadius: 20, borderTopRightRadius: 20 },
@@ -175,6 +244,8 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontWeight: '800', color: '#111', flex: 1 },
   badge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#e5e5e5', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, gap: 4 },
   badgeText: { fontSize: 12, color: '#666', fontWeight: '600' },
+  uploadButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#3b82f6', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12, gap: 4 },
+  uploadButtonText: { fontSize: 12, color: '#fff', fontWeight: 'bold' },
   description: { fontSize: 16, color: '#444', lineHeight: 24, marginVertical: 12 },
   sectionsContainer: { marginTop: 24 },
   sectionsTitle: { fontSize: 20, fontWeight: '700', color: '#111', marginBottom: 12 },
