@@ -56,7 +56,7 @@ export default function Comments({ pageId }: { pageId: string }) {
   };
 
   const insertMention = (user: any) => {
-    const replacement = @\ ;
+    const replacement = `@${user.first_name} `;
     const newText = newComment.replace(/@\w*$/, replacement);
     setNewComment(newText);
     setShowMentions(false);
@@ -82,8 +82,8 @@ export default function Comments({ pageId }: { pageId: string }) {
         await supabase.from('notifications').insert({
           user_id: taggedUser.id,
           actor_id: user.id,
-          message: mentioned you in a comment on \,
-          link: /office/docs/\
+          message: `mentioned you in a comment on ${pageId}`,
+          link: `/office/docs/${pageId}`
         });
       }
     }
@@ -147,5 +147,3 @@ export default function Comments({ pageId }: { pageId: string }) {
     </div>
   );
 }
-
-
