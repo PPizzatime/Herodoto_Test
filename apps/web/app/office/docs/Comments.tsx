@@ -19,7 +19,7 @@ export default function Comments({ pageId }: { pageId: string }) {
 
     // Subscribe to new comments
     const channel = supabase.channel('realtime-comments')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments', filter: page_id=eq.\ }, (payload) => {
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments', filter: `page_id=eq.${pageId}` }, (payload) => {
         loadComments();
       })
       .subscribe();
@@ -147,3 +147,5 @@ export default function Comments({ pageId }: { pageId: string }) {
     </div>
   );
 }
+
+

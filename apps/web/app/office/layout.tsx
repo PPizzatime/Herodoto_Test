@@ -17,7 +17,7 @@ function NotificationBell({ userId }: { userId: string }) {
   useEffect(() => {
     loadNotifications();
     const channel = supabase.channel('realtime-notifications')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: user_id=eq.\ }, (payload) => {
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` }, (payload) => {
         loadNotifications();
       }).subscribe();
     return () => { supabase.removeChannel(channel); };
@@ -164,6 +164,8 @@ export default function OfficeLayout({ children }: { children: React.ReactNode }
     </div>
   );
 }
+
+
 
 
 

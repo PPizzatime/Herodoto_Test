@@ -13,7 +13,7 @@ export default function NotificationsScreen() {
         loadNotifications(user.id);
         
         const channel = supabase.channel('realtime-mobile-notifications')
-          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: user_id=eq.\ }, (payload) => {
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, (payload) => {
             loadNotifications(user.id);
           }).subscribe();
           
