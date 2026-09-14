@@ -106,16 +106,75 @@ export default function IndexScreen() {
 
         <View style={styles.divider}>
           <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>OR AUTOFILL AS</Text>
+          <Text style={styles.dividerText}>ROLES</Text>
           <View style={styles.dividerLine} />
         </View>
 
-        {/* Admin Team Autofill Buttons */}
+        <View style={styles.cardContainer}>
+          <TouchableOpacity style={styles.card} onPress={() => autofill('consumer', 'consumer@herodoto.art')}>
+            <View style={[styles.iconContainer, { backgroundColor: '#f0fdf4' }]}>
+              <User color="#16a34a" size={24} />
+            </View>
+            <Text style={styles.cardTitle}>Consumer</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.card} onPress={() => autofill('employee', 'employee@herodoto.art')}>
+            <View style={[styles.iconContainer, { backgroundColor: '#eff6ff' }]}>
+              <Briefcase color="#2563eb" size={24} />
+            </View>
+            <Text style={styles.cardTitle}>Employee</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.card} onPress={() => autofill('manager', 'manager@herodoto.art')}>
+            <View style={[styles.iconContainer, { backgroundColor: '#fdf4ff' }]}>
+              <Settings color="#c026d3" size={24} />
+            </View>
+            <Text style={styles.cardTitle}>Manager</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.card} onPress={() => autofill('admin', 'admin@herodoto.art')}>
+            <View style={[styles.iconContainer, { backgroundColor: '#fef2f2' }]}>
+              <Shield color="#dc2626" size={24} />
+            </View>
+            <Text style={styles.cardTitle}>Admin</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={[styles.divider, { marginTop: 16 }]}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>TEAM</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
         <View style={styles.cardContainer}>
           <TouchableOpacity style={styles.card} onPress={() => autofill('admin', 'carlos@herodoto.art')}>
             <View style={[styles.iconContainer, { backgroundColor: '#fef2f2' }]}>
               <Shield color="#dc2626" size={24} />
             </View>
+            <Text style={styles.cardTitle}>Carlos</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.card} onPress={() => autofill('admin', 'luis@herodoto.art')}>
+            <View style={[styles.iconContainer, { backgroundColor: '#fef2f2' }]}>
+              <Shield color="#dc2626" size={24} />
+            </View>
+            <Text style={styles.cardTitle}>Luis</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.card} onPress={() => autofill('admin', 'ricardo@herodoto.art')}>
+            <View style={[styles.iconContainer, { backgroundColor: '#fef2f2' }]}>
+              <Shield color="#dc2626" size={24} />
+            </View>
+            <Text style={styles.cardTitle}>Ricardo</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.card} onPress={() => autofill('admin', 'enrique@herodoto.art')}>
+            <View style={[styles.iconContainer, { backgroundColor: '#fef2f2' }]}>
+              <Shield color="#dc2626" size={24} />
+            </View>
+            <Text style={styles.cardTitle}>Enrique</Text>
+          </TouchableOpacity>
+        </View>
             <Text style={styles.cardTitle}>Carlos</Text>
           </TouchableOpacity>
 
@@ -256,6 +315,7 @@ const styles = StyleSheet.create({
     color: 'black',
   }
 });
+
 
 
 
