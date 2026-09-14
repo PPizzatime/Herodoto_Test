@@ -1,6 +1,10 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { supabase } from '../../../../packages/supabase/src';
+import { createBrowserClient } from '@repo/supabase';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:54321';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'dummy';
+const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey);
 
 export default function DashboardPage() {
   const [tasks, setTasks] = useState<any[]>([]);
