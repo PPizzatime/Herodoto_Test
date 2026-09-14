@@ -118,6 +118,8 @@ export default function OfficeLayout({ children }: { children: React.ReactNode }
             <Link href="/office/promos" style={{ color: 'white', textDecoration: 'none' }}>Promos</Link>
             <Link href="/office/security" style={{ color: '#ff6b6b', textDecoration: 'none' }}>Security & Audit</Link>
             <Link href="/office/docs" style={{ color: '#60a5fa', textDecoration: 'none' }}>System Docs</Link>
+            <Link href="/office/hr" style={{ color: '#fcd34d', textDecoration: 'none' }}>HR Documents</Link>
+            <Link href="/office/artifacts" style={{ color: '#c084fc', textDecoration: 'none' }}>Company Artifacts</Link>
           </nav>
           
           {/* Logout Button */}
