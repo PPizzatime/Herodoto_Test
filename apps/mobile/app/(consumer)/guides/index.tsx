@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ImageBackground, SafeAreaView } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { CheckCircle2, Clock, MapPin, Smile } from 'lucide-react-native';
 import * as Location from 'expo-location';
 
@@ -27,81 +27,96 @@ export default function GuidesListScreen() {
   const [offerGuides, setOfferGuides] = useState<any[]>([]);
   const [historyGuides, setHistoryGuides] = useState<any[]>([]);
 
+  // Get location once on mount
   useEffect(() => {
     (async () => {
-      let currentLocation: Location.LocationObject | null = null;
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status === 'granted') {
         try {
-          currentLocation = await Location.getCurrentPositionAsync({});
+          const currentLocation = await Location.getCurrentPositionAsync({});
           setLocation(currentLocation);
         } catch (e) {
           console.log('Location error:', e);
         }
       }
-
-      // Fetch guide versions and promos
-      const { data: gVersions } = await supabase.from('guide_versions').select('*');
-      const { data: activePromos } = await supabase.from('promos').select('guide_id').eq('status', 'ACTIVE');
-      
-      const promoGuideIds = new Set(activePromos?.map(p => p.guide_id) || []);
-
-      // Fetch user history
-      const { data: { user } } = await supabase.auth.getUser();
-      let historyMap = new Map();
-      if (user) {
-        // Look up activity logs for history
-        const { data: historyLogs } = await supabase.from('activity_logs').select('*').eq('user_id', user.id).eq('action', 'OPEN_GUIDE');
-        if (historyLogs) {
-          historyLogs.forEach((h: any) => historyMap.set(h.record_id, 'OPENED'));
-        }
-        
-        // Also fallback to user_guide_history
-        const { data: historyList } = await supabase.from('user_guide_history').select('*').eq('user_id', user.id);
-        if (historyList) {
-          historyList.forEach((h: any) => historyMap.set(h.guide_id, h.status));
-        }
-      }
-
-      if (gVersions) {
-        const allGuides = gVersions.map((gv: any) => {
-          let distance;
-          if (currentLocation && gv.lat && gv.lng) {
-            distance = getDistanceFromLatLonInKm(
-              currentLocation.coords.latitude,
-              currentLocation.coords.longitude,
-              gv.lat,
-              gv.lng
-            );
-          }
-          return {
-            ...gv,
-            id: gv.guide_id,
-            image: gv.image_url,
-            distance,
-            historyStatus: historyMap.get(gv.guide_id)
-          };
-        });
-
-        const dedupedMap = new Map();
-        allGuides.forEach(g => {
-          if (!dedupedMap.has(g.id)) {
-            dedupedMap.set(g.id, g);
-          }
-        });
-        const dedupedGuides = Array.from(dedupedMap.values());
-        dedupedGuides.sort((a, b) => (a.distance || 0) - (b.distance || 0));
-
-        setSortedGuides(dedupedGuides);
-        
-        // OFFERS filter using promos table
-        setOfferGuides(dedupedGuides.filter(g => promoGuideIds.has(g.id)));
-
-        // HISTORY
-        setHistoryGuides(dedupedGuides.filter(g => g.historyStatus));
-      }
     })();
   }, []);
+
+  // useFocusEffect triggers every time the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+
+      const fetchGuidesData = async () => {
+        // Fetch guide versions and promos
+        const { data: gVersions } = await supabase.from('guide_versions').select('*');
+        const { data: activePromos } = await supabase.from('promos').select('guide_id').eq('status', 'ACTIVE');
+        
+        const promoGuideIds = new Set(activePromos?.map(p => p.guide_id) || []);
+
+        // Fetch user history
+        const { data: { user } } = await supabase.auth.getUser();
+        let historyMap = new Map();
+        if (user) {
+          // Look up activity logs for history
+          const { data: historyLogs } = await supabase.from('activity_logs').select('*').eq('user_id', user.id).eq('action', 'OPEN_GUIDE');
+          if (historyLogs) {
+            historyLogs.forEach((h: any) => historyMap.set(h.details?.guide_id, 'OPENED'));
+          }
+          
+          // Also fallback to user_guide_history
+          const { data: historyList } = await supabase.from('user_guide_history').select('*').eq('user_id', user.id);
+          if (historyList) {
+            historyList.forEach((h: any) => historyMap.set(h.guide_id, h.status));
+          }
+        }
+
+        if (gVersions && isActive) {
+          const allGuides = gVersions.map((gv: any) => {
+            let distance;
+            if (location && gv.lat && gv.lng) {
+              distance = getDistanceFromLatLonInKm(
+                location.coords.latitude,
+                location.coords.longitude,
+                gv.lat,
+                gv.lng
+              );
+            }
+            return {
+              ...gv,
+              id: gv.guide_id,
+              image: gv.image_url,
+              distance,
+              historyStatus: historyMap.get(gv.guide_id)
+            };
+          });
+
+          const dedupedMap = new Map();
+          allGuides.forEach(g => {
+            if (!dedupedMap.has(g.id)) {
+              dedupedMap.set(g.id, g);
+            }
+          });
+          const dedupedGuides = Array.from(dedupedMap.values());
+          dedupedGuides.sort((a, b) => (a.distance || 0) - (b.distance || 0));
+
+          setSortedGuides(dedupedGuides);
+          
+          // OFFERS filter using promos table
+          setOfferGuides(dedupedGuides.filter(g => promoGuideIds.has(g.id)));
+
+          // HISTORY
+          setHistoryGuides(dedupedGuides.filter(g => g.historyStatus));
+        }
+      };
+
+      fetchGuidesData();
+
+      return () => {
+        isActive = false;
+      };
+    }, [location]) // re-run if location changes
+  );
 
   const renderGuide = ({ item }: { item: any }) => (
     <TouchableOpacity 

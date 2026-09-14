@@ -16,7 +16,7 @@ export default function GuidesCMSPage() {
   const fetchGuides = async () => {
     const { data, error } = await supabase
       .from('guides')
-      .select('*, guide_versions(*)');
+      .select('*, guide_versions(*), guide_images(*)');
       
     if (data) {
       setGuides(data);
@@ -37,6 +37,7 @@ export default function GuidesCMSPage() {
       <table style={{ width: '100%', marginTop: '30px', background: 'white', borderRadius: '8px', overflow: 'hidden', borderCollapse: 'collapse' }}>
         <thead style={{ background: '#eee', textAlign: 'left' }}>
           <tr>
+            <th style={{ padding: '12px', width: '80px' }}>Picture</th>
             <th style={{ padding: '12px' }}>Status</th>
             <th style={{ padding: '12px' }}>Title</th>
             <th style={{ padding: '12px' }}>Price</th>
@@ -48,8 +49,17 @@ export default function GuidesCMSPage() {
             const latestVersion = guide.guide_versions?.sort((a: any, b: any) => b.version_number - a.version_number)[0];
             const title = latestVersion?.title || 'Untitled';
             const price = latestVersion?.price || 0;
+            
+            // Prefer first guide_image, otherwise fallback to version image_url
+            const firstImage = (guide.guide_images && guide.guide_images.length > 0) 
+                ? guide.guide_images[0].image_url 
+                : (latestVersion?.image_url || 'https://via.placeholder.com/80?text=No+Image');
+
             return (
               <tr key={guide.id} style={{ borderBottom: '1px solid #eee' }}>
+                <td style={{ padding: '12px' }}>
+                  <img src={firstImage} alt={title} style={{ width: '60px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} />
+                </td>
                 <td style={{ padding: '12px' }}>
                   <span style={{ 
                     padding: '4px 8px', 
