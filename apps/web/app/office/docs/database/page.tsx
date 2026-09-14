@@ -1,3 +1,5 @@
+import Comments from '../Comments';
+
 export default function DocsDb() {
   return (
     <div style={{ fontFamily: 'sans-serif', lineHeight: 1.6, color: '#333' }}>
@@ -17,6 +19,8 @@ export default function DocsDb() {
       </ul>
 
       <p>For how the database connects to the code, see the <a href="/office/docs/tech-stack" style={{ color: '#2563eb' }}>Tech Stack</a>.</p>
+      <Comments pageId="database" />
     </div>
   );
 }
+

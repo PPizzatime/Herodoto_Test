@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Button, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, StyleSheet, Button, TouchableOpacity, ActivityIndicator, Platform, Image, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 
@@ -8,21 +8,40 @@ export default function ProfileScreen() {
   const [points, setPoints] = useState(350);
   const [level, setLevel] = useState(3);
   const [email, setEmail] = useState('Not signed in');
+  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const pointsForNextLevel = 500;
+  const [isEditing, setIsEditing] = useState(false);
+  const [firstName, setFirstName] = useState('');
   
+  const pointsForNextLevel = 500;
   const progress = points / pointsForNextLevel;
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    async function loadData() {
+      const { data: { user } } = await supabase.auth.getUser();
       if (user?.email) {
         setEmail(user.email);
+        const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+        if (data) {
+          setProfile(data);
+          setFirstName(data.first_name || '');
+        }
       } else {
         setEmail('consumer@test.com (Bypassed)');
       }
       setLoading(false);
-    });
+    }
+    loadData();
   }, []);
+
+  const saveProfile = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await supabase.from('profiles').update({ first_name: firstName }).eq('id', user.id);
+      setProfile({ ...profile, first_name: firstName });
+      setIsEditing(false);
+    }
+  };
 
   const handleLogout = async () => {
     setLoading(true);
@@ -56,8 +75,35 @@ export default function ProfileScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.name}>John Doe</Text>
-        <Text style={styles.email}>{email}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          {profile?.avatar_url ? (
+            <Image source={{ uri: profile.avatar_url }} style={{ width: 60, height: 60, borderRadius: 30, marginRight: 16 }} />
+          ) : (
+            <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: '#ddd', marginRight: 16 }} />
+          )}
+          <View style={{ flex: 1 }}>
+            {isEditing ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <TextInput 
+                  value={firstName} 
+                  onChangeText={setFirstName} 
+                  style={{ borderBottomWidth: 1, borderColor: '#ccc', fontSize: 24, fontWeight: 'bold', flex: 1 }} 
+                />
+                <TouchableOpacity onPress={saveProfile} style={{ backgroundColor: 'black', padding: 8, borderRadius: 4, marginLeft: 8 }}>
+                  <Text style={{ color: 'white' }}>Save</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={styles.name}>{profile?.first_name || 'Guest User'} {profile?.last_name || ''}</Text>
+                <TouchableOpacity onPress={() => setIsEditing(true)} style={{ marginLeft: 8 }}>
+                  <Text style={{ color: 'blue' }}>Edit</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            <Text style={styles.email}>{email}</Text>
+          </View>
+        </View>
       </View>
 
       {isWorker && (
@@ -128,5 +174,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold'
   }
 });
+
 
 

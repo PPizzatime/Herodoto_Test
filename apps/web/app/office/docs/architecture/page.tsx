@@ -1,3 +1,5 @@
+import Comments from '../Comments';
+
 export default function DocsArch() {
   return (
     <div style={{ fontFamily: 'sans-serif', lineHeight: 1.6, color: '#333' }}>
@@ -26,6 +28,8 @@ export default function DocsArch() {
         <li>Clicking the button sends them to <code>/office</code>, which is intercepted and rendered by the Next.js Office Portal engine.</li>
       </ul>
       <p>For more details on how these are built and hosted, see the <a href="/office/docs/deployment" style={{ color: '#2563eb' }}>Deployment Guide</a>.</p>
+      <Comments pageId="architecture" />
     </div>
   );
 }
+

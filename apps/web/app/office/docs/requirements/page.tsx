@@ -1,3 +1,5 @@
+import Comments from '../Comments';
+
 export default function DocsReqs() {
   return (
     <div style={{ fontFamily: 'sans-serif', lineHeight: 1.6, color: '#333' }}>
@@ -23,6 +25,8 @@ export default function DocsReqs() {
         <li><strong>Office CMS:</strong> Complete the Data management tables in the Office Portal (Tours, Guides, Users).</li>
         <li><strong>Gamification Backend:</strong> Connect the Level/Points UI in the Profile tab to real Supabase database columns.</li>
       </ul>
+      <Comments pageId="requirements" />
     </div>
   );
 }
+

@@ -36,7 +36,29 @@ export default function IndexScreen() {
         password: password,
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.message.includes('Invalid login credentials')) {
+          // Try to sign them up automatically if they don't exist
+          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            email: email,
+            password: password,
+            options: {
+              data: {
+                first_name: email.split('@')[0], // Give them a default name based on email
+              }
+            }
+          });
+          
+          if (signUpError) throw signUpError;
+          if (signUpData.session) {
+            router.replace('/(consumer)/guides');
+            return;
+          } else {
+            throw new Error('Account created, but email confirmation is required! Please disable Email Confirmations in Supabase Dashboard.');
+          }
+        }
+        throw error;
+      }
       
       // All users (Consumers and Employees) go to the Consumer app first!
       router.replace('/(consumer)/guides');
@@ -108,34 +130,34 @@ export default function IndexScreen() {
           <View style={styles.dividerLine} />
         </View>
 
-        {/* Development Autofill Buttons */}
+        {/* Admin Team Autofill Buttons */}
         <View style={styles.cardContainer}>
-          <TouchableOpacity style={styles.card} onPress={() => autofill('consumer', 'consumer@herodoto.art')}>
-            <View style={[styles.iconContainer, { backgroundColor: '#f0fdf4' }]}>
-              <User color="#16a34a" size={24} />
-            </View>
-            <Text style={styles.cardTitle}>Consumer</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.card} onPress={() => autofill('employee', 'employee@herodoto.art')}>
-            <View style={[styles.iconContainer, { backgroundColor: '#eff6ff' }]}>
-              <Briefcase color="#2563eb" size={24} />
-            </View>
-            <Text style={styles.cardTitle}>Employee</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.card} onPress={() => autofill('manager', 'manager@herodoto.art')}>
-            <View style={[styles.iconContainer, { backgroundColor: '#fdf4ff' }]}>
-              <Settings color="#c026d3" size={24} />
-            </View>
-            <Text style={styles.cardTitle}>Manager</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.card} onPress={() => autofill('admin', 'admin@herodoto.art')}>
+          <TouchableOpacity style={styles.card} onPress={() => autofill('admin', 'carlos@herodoto.art')}>
             <View style={[styles.iconContainer, { backgroundColor: '#fef2f2' }]}>
               <Shield color="#dc2626" size={24} />
             </View>
-            <Text style={styles.cardTitle}>Admin</Text>
+            <Text style={styles.cardTitle}>Carlos</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.card} onPress={() => autofill('admin', 'luis@herodoto.art')}>
+            <View style={[styles.iconContainer, { backgroundColor: '#fef2f2' }]}>
+              <Shield color="#dc2626" size={24} />
+            </View>
+            <Text style={styles.cardTitle}>Luis</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.card} onPress={() => autofill('admin', 'ricardo@herodoto.art')}>
+            <View style={[styles.iconContainer, { backgroundColor: '#fef2f2' }]}>
+              <Shield color="#dc2626" size={24} />
+            </View>
+            <Text style={styles.cardTitle}>Ricardo</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.card} onPress={() => autofill('admin', 'enrique@herodoto.art')}>
+            <View style={[styles.iconContainer, { backgroundColor: '#fef2f2' }]}>
+              <Shield color="#dc2626" size={24} />
+            </View>
+            <Text style={styles.cardTitle}>Enrique</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -254,3 +276,5 @@ const styles = StyleSheet.create({
     color: 'black',
   }
 });
+
+

@@ -10,17 +10,77 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:54
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'dummy';
 const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey);
 
+function NotificationBell({ userId }: { userId: string }) {
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    loadNotifications();
+    const channel = supabase.channel('realtime-notifications')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: user_id=eq.\ }, (payload) => {
+        loadNotifications();
+      }).subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [userId]);
+
+  async function loadNotifications() {
+    const { data } = await supabase.from('notifications')
+      .select('*, actor:profiles!actor_id(first_name)')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(10);
+    if (data) setNotifications(data);
+  }
+
+  async function markAsRead(id: string) {
+    await supabase.from('notifications').update({ is_read: true }).eq('id', id);
+    loadNotifications();
+  }
+
+  const unreadCount = notifications.filter(n => !n.is_read).length;
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <button onClick={() => setIsOpen(!isOpen)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '24px', position: 'relative' }}>
+        ??
+        {unreadCount > 0 && (
+          <div style={{ position: 'absolute', top: '-5px', right: '-5px', background: 'red', color: 'white', borderRadius: '50%', width: '20px', height: '20px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+            {unreadCount}
+          </div>
+        )}
+      </button>
+
+      {isOpen && (
+        <div style={{ position: 'absolute', right: 0, top: '40px', width: '300px', backgroundColor: 'white', border: '1px solid #ddd', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', zIndex: 50, maxHeight: '400px', overflowY: 'auto' }}>
+          <div style={{ padding: '12px', borderBottom: '1px solid #eee', fontWeight: 'bold' }}>Notifications</div>
+          {notifications.length === 0 ? (
+            <div style={{ padding: '16px', color: '#888', textAlign: 'center' }}>No notifications</div>
+          ) : (
+            notifications.map(n => (
+              <div key={n.id} onClick={() => { markAsRead(n.id); if (n.link) window.location.href = n.link; }} style={{ padding: '12px', borderBottom: '1px solid #eee', cursor: 'pointer', backgroundColor: n.is_read ? 'white' : '#eff6ff' }}>
+                <div style={{ fontSize: '14px', color: 'black' }}><b>{n.actor?.first_name || 'Someone'}</b> {n.message}</div>
+                <div style={{ fontSize: '11px', color: '#888', marginTop: '4px' }}>{new Date(n.created_at).toLocaleString()}</div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function OfficeLayout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user }, error }) => {
       if (error || !user) {
-        // Not logged in -> kick them out
         window.location.href = '/app';
       } else {
+        setUserId(user.id);
         setIsAuthorized(true);
       }
     });
@@ -49,6 +109,7 @@ export default function OfficeLayout({ children }: { children: React.ReactNode }
           
           <nav style={{ display: 'flex', flexDirection: 'column', gap: '15px', flex: 1 }}>
             <Link href="/office/dashboard" style={{ color: 'white', textDecoration: 'none' }}>Dashboard</Link>
+            <Link href="/office/profile" style={{ color: 'white', textDecoration: 'none' }}>My Profile</Link>
             <Link href="/office/guides" style={{ color: 'white', textDecoration: 'none' }}>Guide CMS</Link>
             <Link href="/office/tasks" style={{ color: 'white', textDecoration: 'none' }}>Tasks</Link>
             <Link href="/office/organization" style={{ color: 'white', textDecoration: 'none' }}>Organization</Link>
@@ -103,6 +164,8 @@ export default function OfficeLayout({ children }: { children: React.ReactNode }
     </div>
   );
 }
+
+
 
 
 

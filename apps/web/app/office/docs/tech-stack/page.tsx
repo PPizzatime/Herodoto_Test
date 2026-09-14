@@ -1,3 +1,5 @@
+import Comments from '../Comments';
+
 export default function DocsTech() {
   return (
     <div style={{ fontFamily: 'sans-serif', lineHeight: 1.6, color: '#333' }}>
@@ -16,6 +18,8 @@ export default function DocsTech() {
         <li><strong>Lucide React Native:</strong> Icon library used in the mobile app for a consistent look.</li>
         <li><strong>Expo Router:</strong> File-based routing for React Native, bringing web-like navigation to the mobile app.</li>
       </ul>
+      <Comments pageId="tech-stack" />
     </div>
   );
 }
+
