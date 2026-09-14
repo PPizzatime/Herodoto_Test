@@ -1,9 +1,11 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { StyleSheet, View, Text, Platform, Image } from "react-native";
 import { supabase } from "../../lib/supabase";
+import * as Location from "expo-location";
 
 export default function MapScreen() {
   const [guides, setGuides] = useState<any[]>([]);
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -19,12 +21,32 @@ export default function MapScreen() {
       }
     }
     load();
+
+    async function getUserLocation() {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') return;
+      let location = await Location.getCurrentPositionAsync({});
+      setUserLocation({ lat: location.coords.latitude, lng: location.coords.longitude });
+    }
+    getUserLocation();
   }, []);
 
   if (Platform.OS === "web") {
     const markersJs = guides.filter(g => g.lat && g.lng).map(g => 
       `L.marker([${g.lat}, ${g.lng}]).addTo(map).bindPopup(\`<div style="text-align:center;"><b>${g.title || ""}</b><br/><img src="${g.image_url || ""}" style="width:60px;height:60px;object-fit:cover;border-radius:30px;margin-top:5px;border:2px solid white;box-shadow:0px 2px 4px rgba(0,0,0,0.3);"/></div>\`);`
     ).join("\n");
+
+    const userMarkerJs = userLocation 
+      ? `
+      var userIcon = L.divIcon({
+        className: 'user-marker',
+        html: '<div style="width:16px;height:16px;background-color:#007AFF;border-radius:50%;border:3px solid white;box-shadow:0px 0px 5px rgba(0,0,0,0.5);"></div>',
+        iconSize: [22, 22],
+        iconAnchor: [11, 11]
+      });
+      L.marker([${userLocation.lat}, ${userLocation.lng}], {icon: userIcon}).addTo(map).bindPopup("You are here");
+      `
+      : "";
 
     const htmlContent = `
       <!DOCTYPE html>
@@ -42,6 +64,7 @@ export default function MapScreen() {
             attribution: "OpenStreetMap"
           }).addTo(map);
           ${markersJs}
+          ${userMarkerJs}
         </script>
       </body>
       </html>
@@ -84,6 +107,7 @@ export default function MapScreen() {
               </View>
             </Mapbox.PointAnnotation>
           ))}
+          <Mapbox.UserLocation visible={true} showsUserHeadingIndicator={true} />
         </Mapbox.MapView>
       </View>
     </View>
