@@ -39,7 +39,8 @@ export default async function DynamicDocPage({ params }: { params: Promise<{ slu
             inline 
               ? <code style={{ backgroundColor: '#f4f4f5', padding: '2px 6px', borderRadius: '4px', fontSize: '14px', color: '#ec4899' }} {...props} />
               : <pre style={{ backgroundColor: '#1e293b', color: '#f8fafc', padding: '16px', borderRadius: '8px', overflowX: 'auto', marginBottom: '16px' }}><code {...props} /></pre>,
-          hr: ({node, ...props}) => <hr style={{ border: 'none', borderTop: '1px solid #eaeaea', margin: '32px 0' }} {...props} />
+          hr: ({node, ...props}) => <hr style={{ border: 'none', borderTop: '1px solid #eaeaea', margin: '32px 0' }} {...props} />,
+          a: ({node, ...props}) => <a style={{ color: '#2563eb', textDecoration: 'underline' }} {...props} />
         }}
       >
         {page.content_markdown}
