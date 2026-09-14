@@ -37,26 +37,6 @@ export default function IndexScreen() {
       });
 
       if (error) {
-        if (error.message.includes('Invalid login credentials')) {
-          // Try to sign them up automatically if they don't exist
-          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-            email: email,
-            password: password,
-            options: {
-              data: {
-                first_name: email.split('@')[0], // Give them a default name based on email
-              }
-            }
-          });
-          
-          if (signUpError) throw signUpError;
-          if (signUpData.session) {
-            router.replace('/(consumer)/guides');
-            return;
-          } else {
-            throw new Error('Account created, but email confirmation is required! Please disable Email Confirmations in Supabase Dashboard.');
-          }
-        }
         throw error;
       }
       
@@ -276,5 +256,6 @@ const styles = StyleSheet.create({
     color: 'black',
   }
 });
+
 
 
