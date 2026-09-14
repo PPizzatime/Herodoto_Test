@@ -57,3 +57,9 @@ This document tracks all implemented features, structural requirements, and oper
 - [x] **Promo Code Logistics:** Transformed the hardcoded Promo Codes view into a functional CMS connected to the `promo_codes` table, featuring live discount configurations and redemption constraints.
 - [x] **Cloud Avatar Storage:** Deployed a public Supabase Storage Bucket (`avatars`) and updated the Office Profile view to support rich file uploads, streaming directly to PostgreSQL via the `profiles` schema.
 - [x] **Hierarchy Re-alignment:** Programmatically synchronized the `organization_members` database to place Luis at the Director tier (`level 10`), with Carlos, Ricardo, and Enrique functioning underneath him. `admin@herodoto.art` was officially branded as 'Admin'.
+
+## 10. Herodoto 2.0 Feature Expansion
+- [x] **Gamification Engine:** Added `points_reward` to guides and created a `gamification_profiles` table to store persistent user progress.
+- [x] **Mobile Map Enhancements:** Mobile map now renders rich thumbnail imagery directly inside the markers by fetching `image_url` from the database.
+- [x] **Hierarchical Workflows:** Tasks engine was upgraded to support `REVIEW_REQUESTED` and `REJECTED`, allowing Managers to formally review subordinate work.
+- [x] **Geotargeted Subscriptions:** Promo codes can now be bound to specific `target_country` and `target_month` restrictions (e.g. 50% off for Mexicans in September).
