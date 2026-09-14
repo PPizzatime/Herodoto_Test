@@ -1,3 +1,5 @@
+import Comments from './Comments';
+
 export default function DocsIndex() {
   return (
     <div style={{ fontFamily: 'sans-serif', lineHeight: 1.6, color: '#333' }}>
@@ -13,6 +15,10 @@ export default function DocsIndex() {
         <li><a href="/office/docs/deployment" style={{ color: '#2563eb' }}>Deployment Guide</a> - How to push updates and manage the Netlify CI/CD pipeline.</li>
         <li><a href="/office/docs/requirements" style={{ color: '#2563eb' }}>Requirements Status</a> - Checklist of fulfilled and pending features.</li>
       </ul>
+
+      <div style={{ marginTop: '40px' }}>
+        <Comments pageId="home" />
+      </div>
     </div>
   );
 }

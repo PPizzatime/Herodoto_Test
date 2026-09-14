@@ -115,7 +115,7 @@ export default function OfficeLayout({ children }: { children: React.ReactNode }
             <Link href="/office/organization" style={{ color: 'white', textDecoration: 'none' }}>Organization</Link>
             <hr style={{ borderColor: '#333', margin: '10px 0' }} />
             <Link href="/office/subscriptions" style={{ color: 'white', textDecoration: 'none' }}>Subscriptions</Link>
-            <Link href="/office/promo-codes" style={{ color: 'white', textDecoration: 'none' }}>Promo Codes</Link>
+            <Link href="/office/promos" style={{ color: 'white', textDecoration: 'none' }}>Promos</Link>
             <Link href="/office/security" style={{ color: '#ff6b6b', textDecoration: 'none' }}>Security & Audit</Link>
             <Link href="/office/docs" style={{ color: '#60a5fa', textDecoration: 'none' }}>System Docs</Link>
           </nav>

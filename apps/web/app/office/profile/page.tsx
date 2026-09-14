@@ -38,7 +38,7 @@ export default function ProfilePage() {
     if (!profile) return;
     const { error } = await supabase
       .from('profiles')
-      .update({ first_name: firstName, last_name: lastName, avatar_url: avatarUrl, updated_at: new Date() })
+      .update({ first_name: firstName, last_name: lastName, avatar_url: avatarUrl })
       .eq('id', profile.id);
     
     if (error) setMessage('Error updating profile: ' + error.message);

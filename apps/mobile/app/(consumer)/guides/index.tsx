@@ -105,6 +105,14 @@ export default function GuidesListScreen() {
         <View style={styles.cardOverlay}>
           <View style={{ flex: 1 }}>
             <Text style={styles.cardTitle}>{item.title}</Text>
+            
+          {item.points_reward !== undefined && (
+            <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 4, backgroundColor: 'rgba(250,204,21,0.2)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8, alignSelf: 'flex-start'}}>
+              <Smile color="#facc15" size={12} />
+              <Text style={{fontSize: 12, color: '#facc15', fontWeight: 'bold'}}>{item.points_reward} pts</Text>
+            </View>
+          )}
+
             {item.distance !== undefined && (
               <View style={styles.distanceBadge}>
                 <MapPin color="white" size={12} />

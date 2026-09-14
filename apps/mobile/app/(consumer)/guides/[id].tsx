@@ -1,193 +1,192 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Platform, Image } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Play, Square, MapPin, ArrowLeft } from 'lucide-react-native';
+import { Play, Square, MapPin, ArrowLeft, Smile } from 'lucide-react-native';
 import * as Speech from 'expo-speech';
-import { DEMO_GUIDES } from '../../../lib/data';
+import { supabase } from '../../../lib/supabase';
 
-const DEFAULT_GUIDE = {
-  id: '1',
-  title: 'Trevi Fountain',
-  image: 'https://picsum.photos/seed/trevi/800/400',
-  intro: {
-    description: 'Welcome to this historic monument. This guide will walk you through its history, architecture, and legends.',
-    coordinates: { lat: 41.9009, lng: 12.4833 }
-  },
-  sections: [
-    {
-      id: 'poi-1',
-      title: 'The Facade',
-      description: 'The architecture here is some of the most famous in the world. Take a moment to notice the intricate sculptures.',
-      ttsText: 'Welcome. Before you is a spectacular facade. Notice the central figures and the architecture.',
-    },
-    {
-      id: 'poi-2',
-      title: 'Legends & Traditions',
-      description: 'It is a tradition to take a moment and reflect here. Countless people have stood where you are standing now.',
-      ttsText: 'Legend has it that this location has mystical properties. Try it yourself and experience the magic.',
-    }
-  ]
-};
-
-export default function GuideDetailScreen() {
+export default function GuideScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
+  
+  const [guide, setGuide] = useState<any>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
-
-  // Find the guide from DEMO_GUIDES to get its title and image
-  const baseGuide = DEMO_GUIDES.find(g => g.id === id) || DEMO_GUIDES[0];
-  const guideData = {
-    ...DEFAULT_GUIDE,
-    title: baseGuide.title,
-    image: baseGuide.image || DEFAULT_GUIDE.image
-  };
-
-  const handlePlayPause = async () => {
-    if (isPlaying) {
-      if (Platform.OS !== 'web') {
-        Speech.stop();
-      }
-      setIsPlaying(false);
-    } else {
-      setIsPlaying(true);
-      const textToSpeak = guideData.sections[currentSectionIndex].ttsText;
-      if (Platform.OS !== 'web') {
-        Speech.speak(textToSpeak, {
-          onDone: () => setIsPlaying(false),
-          onError: () => setIsPlaying(false)
-        });
-      } else {
-        // Web Speech API fallback
-        if ('speechSynthesis' in window) {
-          const utterance = new SpeechSynthesisUtterance(textToSpeak);
-          utterance.onend = () => setIsPlaying(false);
-          utterance.onerror = () => setIsPlaying(false);
-          window.speechSynthesis.speak(utterance);
-        } else {
-          console.log('Web Speech API not supported in this browser.');
-          setIsPlaying(false);
-        }
-      }
-    }
-  };
+  const [activeSection, setActiveSection] = useState<string | null>(null);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    return () => {
-      if (Platform.OS !== 'web') {
-        Speech.stop();
-      } else if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
+    (async () => {
+      // 1. Fetch Guide details
+      const { data: gv } = await supabase.from('guide_versions').select('*').eq('guide_id', id).single();
+      if (gv) {
+        setGuide({
+          ...gv,
+          sections: [
+            { id: 'poi-1', title: 'Introduction', description: gv.description, ttsText: gv.description },
+            { id: 'poi-2', title: 'Historical Context', description: 'This place holds incredible history.', ttsText: 'This place holds incredible history.' }
+          ]
+        });
+
+        // 2. Add to user history if not exists
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: existing } = await supabase.from('user_guide_history').select('*').eq('user_id', user.id).eq('guide_id', id).maybeSingle();
+          if (!existing) {
+            await supabase.from('user_guide_history').insert({
+              user_id: user.id,
+              guide_id: id,
+              status: 'IN_PROGRESS'
+            });
+          }
+        }
+      }
+    })();
+  }, [id]);
+
+  useEffect(() => {
+    let interval: any;
+    if (isPlaying) {
+      interval = setInterval(() => {
+        setProgress(p => {
+          if (p >= 100) {
+            handleStop();
+            return 100;
+          }
+          return p + 2;
+        });
+      }, 500);
+    }
+    return () => clearInterval(interval);
+  }, [isPlaying]);
+
+  const handlePlay = async (section: any) => {
+    if (isPlaying) {
+      await Speech.stop();
+    }
+    setActiveSection(section.id);
+    setIsPlaying(true);
+    setProgress(0);
+    
+    const options = {
+      language: 'en',
+      pitch: 1.0,
+      rate: 0.9,
+      onDone: () => {
+        setIsPlaying(false);
+        setProgress(100);
+      },
+      onError: (err: any) => {
+        console.error('Speech error', err);
+        setIsPlaying(false);
       }
     };
-  }, []);
+    Speech.speak(section.ttsText, options);
+  };
+
+  const handleStop = async () => {
+    await Speech.stop();
+    setIsPlaying(false);
+    setProgress(0);
+    setActiveSection(null);
+  };
+
+  if (!guide) {
+    return <SafeAreaView style={styles.container}><Text>Loading...</Text></SafeAreaView>;
+  }
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <ArrowLeft color="#000" size={24} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{guideData.title}</Text>
-        <View style={{ width: 24 }} />
-      </View>
-      
       <ScrollView>
-        <Image source={{ uri: guideData.image }} style={styles.heroImage} resizeMode="cover" />
+        <Image source={{ uri: guide.image_url }} style={styles.headerImage} />
         
+        <View style={styles.headerActions}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <ArrowLeft color="#000" size={24} />
+          </TouchableOpacity>
+        </View>
+
         <View style={styles.content}>
-          <Text style={styles.introTitle}>Overview</Text>
-          <Text style={styles.introText}>{guideData.intro.description}</Text>
+          <View style={styles.titleRow}>
+            <Text style={styles.title}>{guide.title}</Text>
+          </View>
           
+          <View style={{flexDirection: 'row', alignItems: 'center', marginVertical: 8, gap: 12}}>
+            <View style={styles.badge}>
+              <MapPin color="#666" size={14} />
+              <Text style={styles.badgeText}>Start at Main Entrance</Text>
+            </View>
+            {guide.points_reward !== undefined && (
+              <View style={[styles.badge, {backgroundColor: 'rgba(250,204,21,0.2)'}]}>
+                <Smile color="#facc15" size={14} />
+                <Text style={[styles.badgeText, {color: '#facc15', fontWeight: 'bold'}]}>{guide.points_reward} pts</Text>
+              </View>
+            )}
+          </View>
+          
+          <Text style={styles.description}>{guide.description}</Text>
+
           <View style={styles.sectionsContainer}>
-            <Text style={styles.sectionsHeader}>Tour Stops</Text>
-            {guideData.sections.map((section, index) => (
-              <TouchableOpacity 
-                key={section.id} 
-                style={[
-                  styles.sectionCard,
-                  currentSectionIndex === index && styles.activeSectionCard
-                ]}
-                onPress={() => {
-                  setCurrentSectionIndex(index);
-                  if (isPlaying) handlePlayPause(); // Stop current speech if changing section
-                }}
-              >
-                <Text style={styles.sectionTitle}>{index + 1}. {section.title}</Text>
-                <Text style={styles.sectionDescription}>{section.description}</Text>
-              </TouchableOpacity>
+            <Text style={styles.sectionsTitle}>Audio Stops</Text>
+            {guide.sections.map((section: any, index: number) => (
+              <View key={section.id} style={styles.sectionCard}>
+                <View style={styles.sectionHeader}>
+                  <View style={styles.sectionNumber}>
+                    <Text style={styles.sectionNumberText}>{index + 1}</Text>
+                  </View>
+                  <Text style={styles.sectionTitle}>{section.title}</Text>
+                  <TouchableOpacity 
+                    style={styles.playButton}
+                    onPress={() => isPlaying && activeSection === section.id ? handleStop() : handlePlay(section)}
+                  >
+                    {isPlaying && activeSection === section.id ? (
+                      <Square color="#ef4444" size={20} fill="#ef4444" />
+                    ) : (
+                      <Play color="#10b981" size={20} fill="#10b981" />
+                    )}
+                  </TouchableOpacity>
+                </View>
+
+                {isPlaying && activeSection === section.id && (
+                  <View style={styles.progressContainer}>
+                    <View style={styles.progressBarBg}>
+                      <View style={[styles.progressBarFill, { width: `${progress}%` }]} />
+                    </View>
+                    <Text style={styles.progressText}>{progress}%</Text>
+                  </View>
+                )}
+                
+                <Text style={styles.sectionDesc}>{section.description}</Text>
+              </View>
             ))}
           </View>
         </View>
       </ScrollView>
-
-      <View style={styles.playerContainer}>
-        <View style={styles.playerInfo}>
-          <Text style={styles.nowPlayingText}>Now Playing</Text>
-          <Text style={styles.currentSectionText}>{guideData.sections[currentSectionIndex].title}</Text>
-        </View>
-        <TouchableOpacity style={styles.playButton} onPress={handlePlayPause}>
-          {isPlaying ? <Square color="white" fill="white" size={24} /> : <Play color="white" fill="white" size={24} />}
-        </TouchableOpacity>
-      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  backButton: { padding: 4 },
-  headerTitle: { fontSize: 18, fontWeight: '700' },
-  heroImage: { width: '100%', height: 220 },
-  content: { padding: 16, paddingBottom: 100 },
-  introTitle: { fontSize: 20, fontWeight: '800', marginBottom: 8 },
-  introText: { fontSize: 16, color: '#444', lineHeight: 24 },
-  sectionsContainer: { marginTop: 32 },
-  sectionsHeader: { fontSize: 18, fontWeight: '700', marginBottom: 12 },
-  sectionCard: {
-    padding: 16,
-    backgroundColor: '#f9f9f9',
-    borderRadius: 12,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#eee'
-  },
-  activeSectionCard: {
-    borderColor: '#000',
-    backgroundColor: '#f0f0f0'
-  },
-  sectionTitle: { fontSize: 16, fontWeight: '600', marginBottom: 4 },
-  sectionDescription: { fontSize: 14, color: '#666', lineHeight: 20 },
-  playerContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#000',
-    flexDirection: 'row',
-    padding: 16,
-    paddingBottom: Platform.OS === 'ios' ? 32 : 16,
-    alignItems: 'center',
-    justifyContent: 'space-between'
-  },
-  playerInfo: { flex: 1 },
-  nowPlayingText: { color: '#888', fontSize: 12, textTransform: 'uppercase', fontWeight: '600' },
-  currentSectionText: { color: '#fff', fontSize: 16, fontWeight: '700', marginTop: 2 },
-  playButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#333',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 16
-  }
+  container: { flex: 1, backgroundColor: '#f5f5f5' },
+  headerImage: { width: '100%', height: 250, resizeMode: 'cover' },
+  headerActions: { position: 'absolute', top: Platform.OS === 'ios' ? 50 : 20, left: 16 },
+  backButton: { backgroundColor: 'rgba(255,255,255,0.9)', padding: 8, borderRadius: 20 },
+  content: { padding: 16, marginTop: -20, backgroundColor: '#f5f5f5', borderTopLeftRadius: 20, borderTopRightRadius: 20 },
+  titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  title: { fontSize: 24, fontWeight: '800', color: '#111', flex: 1 },
+  badge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#e5e5e5', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, gap: 4 },
+  badgeText: { fontSize: 12, color: '#666', fontWeight: '600' },
+  description: { fontSize: 16, color: '#444', lineHeight: 24, marginVertical: 12 },
+  sectionsContainer: { marginTop: 24 },
+  sectionsTitle: { fontSize: 20, fontWeight: '700', color: '#111', marginBottom: 12 },
+  sectionCard: { backgroundColor: 'white', padding: 16, borderRadius: 12, marginBottom: 12, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  sectionNumber: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#f0f9ff', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  sectionNumberText: { color: '#0ea5e9', fontWeight: 'bold' },
+  sectionTitle: { fontSize: 16, fontWeight: '600', color: '#111', flex: 1 },
+  playButton: { padding: 8, backgroundColor: '#f8fafc', borderRadius: 20 },
+  sectionDesc: { fontSize: 14, color: '#666', lineHeight: 20 },
+  progressContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 8 },
+  progressBarBg: { flex: 1, height: 6, backgroundColor: '#e2e8f0', borderRadius: 3, overflow: 'hidden' },
+  progressBarFill: { height: '100%', backgroundColor: '#10b981' },
+  progressText: { fontSize: 12, color: '#666', width: 32 }
 });
