@@ -175,30 +175,6 @@ export default function IndexScreen() {
             <Text style={styles.cardTitle}>Enrique</Text>
           </TouchableOpacity>
         </View>
-            <Text style={styles.cardTitle}>Carlos</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.card} onPress={() => autofill('admin', 'luis@herodoto.art')}>
-            <View style={[styles.iconContainer, { backgroundColor: '#fef2f2' }]}>
-              <Shield color="#dc2626" size={24} />
-            </View>
-            <Text style={styles.cardTitle}>Luis</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.card} onPress={() => autofill('admin', 'ricardo@herodoto.art')}>
-            <View style={[styles.iconContainer, { backgroundColor: '#fef2f2' }]}>
-              <Shield color="#dc2626" size={24} />
-            </View>
-            <Text style={styles.cardTitle}>Ricardo</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.card} onPress={() => autofill('admin', 'enrique@herodoto.art')}>
-            <View style={[styles.iconContainer, { backgroundColor: '#fef2f2' }]}>
-              <Shield color="#dc2626" size={24} />
-            </View>
-            <Text style={styles.cardTitle}>Enrique</Text>
-          </TouchableOpacity>
-        </View>
       </View>
     </SafeAreaView>
   );
@@ -315,7 +291,3 @@ const styles = StyleSheet.create({
     color: 'black',
   }
 });
-
-
-
-
