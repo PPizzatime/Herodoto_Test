@@ -26,6 +26,14 @@ export default function ProfileScreen() {
           setProfile(data);
           setFirstName(data.first_name || '');
         }
+        const { data: gamification } = await supabase.from('gamification_profiles').select('*').eq('user_id', user.id).single();
+        if (gamification) {
+          setPoints(gamification.points || 0);
+          setLevel(gamification.level || 1);
+        } else {
+          setPoints(0);
+          setLevel(1);
+        }
       } else {
         setEmail('consumer@test.com (Bypassed)');
       }

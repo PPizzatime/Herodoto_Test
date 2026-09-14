@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { CheckCircle2, Clock, MapPin, Smile } from 'lucide-react-native';
 import * as Location from 'expo-location';
 
-import { DEMO_GUIDES } from '../../../lib/data';
+import { supabase } from '../../../lib/supabase';
 
 // Haversine formula to calculate distance between two coordinates in km
 function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -23,33 +23,75 @@ export default function GuidesListScreen() {
   const router = useRouter();
   const [activeTab, setactiveTab] = useState<'GUIDES' | 'OFFERS' | 'HISTORY'>('GUIDES');
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
-  const [sortedGuides, setSortedGuides] = useState(DEMO_GUIDES);
+  
+  const [sortedGuides, setSortedGuides] = useState<any[]>([]);
+  const [offerGuides, setOfferGuides] = useState<any[]>([]);
+  const [historyGuides, setHistoryGuides] = useState<any[]>([]);
 
   useEffect(() => {
     (async () => {
+      let currentLocation: Location.LocationObject | null = null;
       let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        return;
+      if (status === 'granted') {
+        try {
+          currentLocation = await Location.getCurrentPositionAsync({});
+          setLocation(currentLocation);
+        } catch (e) {
+          console.log('Location error:', e);
+        }
       }
-      try {
-        let currentLocation = await Location.getCurrentPositionAsync({});
-        setLocation(currentLocation);
-        
-        // Sort guides by distance
-        const guidesWithDistance = DEMO_GUIDES.map(guide => ({
-          ...guide,
-          distance: getDistanceFromLatLonInKm(
-            currentLocation.coords.latitude,
-            currentLocation.coords.longitude,
-            guide.lat,
-            guide.lng
-          )
-        }));
-        
-        guidesWithDistance.sort((a, b) => (a.distance || 0) - (b.distance || 0));
-        setSortedGuides(guidesWithDistance);
-      } catch (e) {
-        console.log('Location error:', e);
+
+      // Fetch guide versions
+      const { data: gVersions } = await supabase.from('guide_versions').select('*');
+      
+      // Fetch user history
+      const { data: { user } } = await supabase.auth.getUser();
+      let historyMap = new Map();
+      if (user) {
+        const { data: historyList } = await supabase.from('user_guide_history').select('*').eq('user_id', user.id);
+        if (historyList) {
+          historyList.forEach((h: any) => historyMap.set(h.guide_id, h.status));
+        }
+      }
+
+      if (gVersions) {
+        const allGuides = gVersions.map((gv: any) => {
+          let distance;
+          if (currentLocation && gv.lat && gv.lng) {
+            distance = getDistanceFromLatLonInKm(
+              currentLocation.coords.latitude,
+              currentLocation.coords.longitude,
+              gv.lat,
+              gv.lng
+            );
+          }
+          return {
+            ...gv,
+            id: gv.guide_id, // we map guide_id to id so router pushes properly
+            image: gv.image_url,
+            distance,
+            historyStatus: historyMap.get(gv.guide_id)
+          };
+        });
+
+        // Dedup by guide_id (take the first one or latest version, assume 1 active for now)
+        const dedupedMap = new Map();
+        allGuides.forEach(g => {
+          if (!dedupedMap.has(g.id)) {
+            dedupedMap.set(g.id, g);
+          }
+        });
+        const dedupedGuides = Array.from(dedupedMap.values());
+
+        // Sort by distance
+        dedupedGuides.sort((a, b) => (a.distance || 0) - (b.distance || 0));
+        setSortedGuides(dedupedGuides);
+
+        // OFFERS
+        setOfferGuides(dedupedGuides.filter(g => g.price === 0 || g.discount_price !== null));
+
+        // HISTORY
+        setHistoryGuides(dedupedGuides.filter(g => g.historyStatus));
       }
     })();
   }, []);
@@ -70,13 +112,15 @@ export default function GuidesListScreen() {
               </View>
             )}
           </View>
-          <View style={styles.statusIcon}>
-            {item.status === 'COMPLETED' ? (
-              <CheckCircle2 color="#4ade80" size={24} />
-            ) : (
-              <Clock color="#facc15" size={24} />
-            )}
-          </View>
+          {item.historyStatus && (
+            <View style={styles.statusIcon}>
+              {item.historyStatus === 'COMPLETED' ? (
+                <CheckCircle2 color="#4ade80" size={24} />
+              ) : (
+                <Clock color="#facc15" size={24} />
+              )}
+            </View>
+          )}
         </View>
       </ImageBackground>
     </TouchableOpacity>
@@ -107,14 +151,18 @@ export default function GuidesListScreen() {
       )}
 
       {activeTab === 'OFFERS' && (
-        <View style={styles.centerContent}>
-          <Text style={styles.placeholderText}>Promo Code Redemption UI</Text>
-        </View>
+        <FlatList
+          data={offerGuides}
+          keyExtractor={(item) => item.id}
+          renderItem={renderGuide}
+          numColumns={2}
+          contentContainerStyle={styles.list}
+        />
       )}
 
       {activeTab === 'HISTORY' && (
         <FlatList
-          data={sortedGuides.filter(g => g.status !== 'UNSTARTED')}
+          data={historyGuides}
           keyExtractor={(item) => item.id}
           renderItem={renderGuide}
           numColumns={2}
