@@ -12,14 +12,16 @@ export default function Comments({ pageId }: { pageId: string }) {
   const [users, setUsers] = useState<any[]>([]);
   const [showMentions, setShowMentions] = useState(false);
   const [mentionQuery, setMentionQuery] = useState('');
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setCurrentUserId(data?.user?.id || null));
     loadComments();
     loadUsers();
 
-    // Subscribe to new comments
+    // Subscribe to new comments (Fallback if Realtime is enabled in Dashboard)
     const channel = supabase.channel('realtime-comments')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments', filter: `page_id=eq.${pageId}` }, (payload) => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'comments', filter: `page_id=eq.${pageId}` }, (payload) => {
         loadComments();
       })
       .subscribe();
@@ -45,7 +47,6 @@ export default function Comments({ pageId }: { pageId: string }) {
     const val = e.target.value;
     setNewComment(val);
 
-    // Simple mention trigger logic (looks for @word at the end)
     const match = val.match(/@(\w*)$/);
     if (match) {
       setShowMentions(true);
@@ -67,28 +68,50 @@ export default function Comments({ pageId }: { pageId: string }) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // 1. Insert comment
-    await supabase.from('comments').insert({
+    // 1. Insert comment and get the returned ID
+    const { data: insertedComment, error } = await supabase.from('comments').insert({
       page_id: pageId,
       author_id: user.id,
       content: newComment
-    });
+    }).select().single();
 
-    // 2. Parse Mentions and create Notifications
-    const mentionedNames = newComment.match(/@(\w+)/g)?.map(m => m.substring(1)) || [];
-    for (const name of mentionedNames) {
-      const taggedUser = users.find(u => u.first_name?.toLowerCase() === name.toLowerCase());
-      if (taggedUser) {
-        await supabase.from('notifications').insert({
-          user_id: taggedUser.id,
-          actor_id: user.id,
-          message: `mentioned you in a comment on ${pageId}`,
-          link: `/office/docs/${pageId}`
-        });
+    if (error) {
+      console.error('Error posting comment:', error);
+      return;
+    }
+
+    // 2. Parse Mentions and create Notifications (linked to the comment_id!)
+    if (insertedComment) {
+      const mentionedNames = newComment.match(/@(\w+)/g)?.map(m => m.substring(1)) || [];
+      for (const name of mentionedNames) {
+        const taggedUser = users.find(u => u.first_name?.toLowerCase() === name.toLowerCase());
+        if (taggedUser) {
+          await supabase.from('notifications').insert({
+            user_id: taggedUser.id,
+            actor_id: user.id,
+            comment_id: insertedComment.id,
+            message: `mentioned you in a comment on ${pageId}`,
+            link: `/office/docs/${pageId}`
+          });
+        }
       }
     }
 
     setNewComment('');
+    // 3. Force reload comments instantly so we don't have to wait for Realtime
+    loadComments();
+  };
+
+  const deleteComment = async (id: string) => {
+    // Optimistic UI update
+    setComments(comments.filter(c => c.id !== id));
+    
+    // Delete from database
+    const { error } = await supabase.from('comments').delete().eq('id', id);
+    if (error) {
+      console.error('Error deleting comment:', error);
+      loadComments(); // Revert if failed
+    }
   };
 
   const filteredUsers = users.filter(u => u.first_name?.toLowerCase().includes(mentionQuery));
@@ -100,17 +123,25 @@ export default function Comments({ pageId }: { pageId: string }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
         {comments.length === 0 ? <p style={{ color: '#6b7280' }}>No comments yet. Start the conversation!</p> : null}
         {comments.map(c => (
-          <div key={c.id} style={{ display: 'flex', gap: '12px', backgroundColor: '#f9fafb', padding: '12px', borderRadius: '8px' }}>
+          <div key={c.id} style={{ display: 'flex', gap: '12px', backgroundColor: '#f9fafb', padding: '12px', borderRadius: '8px', position: 'relative' }}>
             {c.author?.avatar_url ? (
               <img src={c.author.avatar_url} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} />
             ) : (
               <div style={{ width: 40, height: 40, borderRadius: '50%', backgroundColor: '#d1d5db' }} />
             )}
-            <div>
+            <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 'bold', fontSize: '14px' }}>{c.author?.first_name || 'Unknown User'}</div>
               <div style={{ fontSize: '15px', marginTop: '4px' }}>{c.content}</div>
               <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>{new Date(c.created_at).toLocaleString()}</div>
             </div>
+            
+            <button 
+              onClick={() => deleteComment(c.id)}
+              style={{ position: 'absolute', top: '12px', right: '12px', background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px' }}
+              title="Delete Comment"
+            >
+              Erase
+            </button>
           </div>
         ))}
       </div>
@@ -147,4 +178,3 @@ export default function Comments({ pageId }: { pageId: string }) {
     </div>
   );
 }
-
