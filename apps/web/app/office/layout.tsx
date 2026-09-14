@@ -42,7 +42,7 @@ function NotificationBell({ userId }: { userId: string }) {
   return (
     <div style={{ position: 'relative' }}>
       <button onClick={() => setIsOpen(!isOpen)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '24px', position: 'relative' }}>
-        ??
+        &#128276;
         {unreadCount > 0 && (
           <div style={{ position: 'absolute', top: '-5px', right: '-5px', background: 'red', color: 'white', borderRadius: '50%', width: '20px', height: '20px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
             {unreadCount}
@@ -150,7 +150,7 @@ export default function OfficeLayout({ children }: { children: React.ReactNode }
                 onClick={() => setIsSidebarOpen(true)}
                 style={{ background: '#1a1a1a', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', fontSize: '16px', marginRight: '20px' }}
               >
-                = Menu
+                &#9776; Menu
               </button>
             )}
             <span style={{ fontWeight: 'bold', fontSize: '20px' }}>Herodoto Office</span>
