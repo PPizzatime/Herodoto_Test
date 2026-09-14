@@ -4,8 +4,12 @@ import Comments from '../Comments';
 import { createServerClient } from '@repo/supabase';
 import { notFound } from 'next/navigation';
 
-export default async function DynamicDocPage({ params }: { params: { slug: string } }) {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:54321';
+export default async function DynamicDocPage({ params }: { params: Promise<{ slug: string }> | { slug: string } }) {
+  // Await the params object for Next.js 15+ compatibility
+  const resolvedParams = await params;
+  const currentSlug = resolvedParams.slug;
+  
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:54321';
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'dummy';
   
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey);
@@ -13,7 +17,7 @@ export default async function DynamicDocPage({ params }: { params: { slug: strin
   const { data: page } = await supabase
     .from('documentation_pages')
     .select('title, content_markdown')
-    .eq('slug', params.slug)
+    .eq('slug', currentSlug)
     .single();
 
   if (!page) {
@@ -41,8 +45,7 @@ export default async function DynamicDocPage({ params }: { params: { slug: strin
         {page.content_markdown}
       </ReactMarkdown>
 
-      <Comments pageId={params.slug} />
+      <Comments pageId={currentSlug} />
     </div>
   );
 }
-
