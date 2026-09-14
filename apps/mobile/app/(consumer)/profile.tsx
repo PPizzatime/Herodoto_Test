@@ -62,7 +62,7 @@ export default function ProfileScreen() {
     }
   };
 
-  const isWorker = email.startsWith('admin') || email.startsWith('employee') || email.startsWith('manager');
+  const isWorker = email.endsWith('@herodoto.art');
 
   if (loading) {
     return (
@@ -174,6 +174,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold'
   }
 });
+
 
 
 

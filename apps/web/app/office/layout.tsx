@@ -140,20 +140,23 @@ export default function OfficeLayout({ children }: { children: React.ReactNode }
       )}
 
       {/* Main Content */}
-      <main style={{ flex: 1, backgroundColor: '#f4f4f4', color: '#111111', overflowY: 'auto' }}>
+      <main style={{ flex: 1, backgroundColor: '#f4f4f4', color: '#111111', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
         
-        {/* Top Header Bar for opening sidebar when hidden */}
-        {!isSidebarOpen && (
-          <div style={{ padding: '20px 30px', backgroundColor: 'white', borderBottom: '1px solid #ddd', display: 'flex', alignItems: 'center' }}>
-            <button 
-              onClick={() => setIsSidebarOpen(true)}
-              style={{ background: '#1a1a1a', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', fontSize: '16px' }}
-            >
-              ☰ Menu
-            </button>
-            <span style={{ marginLeft: '20px', fontWeight: 'bold', fontSize: '20px' }}>Herodoto Office</span>
+        {/* Top Header Bar ALWAYS visible */}
+        <div style={{ padding: '20px 30px', backgroundColor: 'white', borderBottom: '1px solid #ddd', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            {!isSidebarOpen && (
+              <button 
+                onClick={() => setIsSidebarOpen(true)}
+                style={{ background: '#1a1a1a', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', fontSize: '16px', marginRight: '20px' }}
+              >
+                = Menu
+              </button>
+            )}
+            <span style={{ fontWeight: 'bold', fontSize: '20px' }}>Herodoto Office</span>
           </div>
-        )}
+          {userId && <NotificationBell userId={userId} />}
+        </div>
 
         {/* Content Wrapper */}
         <div style={{ padding: '30px' }}>
@@ -164,6 +167,8 @@ export default function OfficeLayout({ children }: { children: React.ReactNode }
     </div>
   );
 }
+
+
 
 
 
